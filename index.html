@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#FF9800">
+    <meta name="description" content="DTP請求計算アプリ">
+    <title>DTP 請求計算</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23FF9800' width='192' height='192'/><text x='50%' y='50%' font-size='100' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='central'>¥</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+            min-height: 100vh;
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(255, 152, 0, 0.15);
+            max-width: 500px;
+            width: 100%;
+            padding: 24px;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+            border-bottom: 3px solid #FF9800;
+            padding-bottom: 16px;
+        }
+
+        h1 {
+            color: #FF6F00;
+            font-size: 28px;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #E65100;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .input-section {
+            margin-bottom: 24px;
+            background: #FFF9E6;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid #FFB74D;
+        }
+
+        .input-section h2 {
+            font-size: 16px;
+            color: #E65100;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .input-section h2::before {
+            content: attr(data-icon);
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .line-item {
+            background: white;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: 1px solid #FFE0B2;
+        }
+
+        .line-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .line-number {
+            font-size: 12px;
+            color: #FF6F00;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .input-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        input {
+            padding: 10px 12px;
+            border: 1px solid #FFD699;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            color: #E65100;
+            background: #FFFEF0;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #FF9800;
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+        }
+
+        input::placeholder {
+            color: #D8BBA0;
+        }
+
+        .subtotal {
+            font-size: 13px;
+            color: #FF6F00;
+            font-weight: 600;
+            padding: 8px 0;
+        }
+
+        .result-section {
+            background: linear-gradient(135deg, #FFF59D 0%, #FFE082 50%, #FFD54F 100%);
+            padding: 24px;
+            border-radius: 12px;
+            color: #E65100;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(255, 152, 0, 0.15);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 0;
+        }
+
+        .result-box {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 13px;
+            color: #FF6F00;
+            margin-bottom: 8px;
+            font-weight: 600;
+            display: block;
+        }
+
+        .result-value {
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            color: #E65100;
+        }
+
+        .result-box.highlight {
+            background: rgba(255, 87, 34, 0.08);
+            border: 2px solid #FF6F00;
+        }
+
+        .result-box.highlight .result-value {
+            font-size: 28px;
+            color: #D84315;
+        }
+
+        .subtotal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 13px;
+        }
+
+        .subtotal-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+
+        .subtotal-label {
+            opacity: 0.9;
+            color: #E65100;
+        }
+
+        .subtotal-value {
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reset {
+            background: #FFE0B2;
+            color: #E65100;
+        }
+
+        .btn-reset:active {
+            background: #FFD699;
+            transform: scale(0.98);
+        }
+
+        .btn-copy {
+            background: linear-gradient(135deg, #FF9800 0%, #FFB74D 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+
+        .btn-copy:active {
+            background: linear-gradient(135deg, #F57C00 0%, #FFA726 100%);
+            transform: scale(0.98);
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #E65100;
+            margin-top: 8px;
+            padding: 8px;
+            background: #FFF9E6;
+            border-left: 3px solid #FFB74D;
+            border-radius: 4px;
+        }
+
+        .install-prompt {
+            background: #E8F5E9;
+            border-left: 4px solid #4CAF50;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #2E7D32;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+                border-radius: 12px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-value {
+                font-size: 22px;
+            }
+
+            .result-box.highlight .result-value {
+                font-size: 26px;
+            }
+        }
+
+        @supports (padding: max(0px)) {
+            .container {
+                padding: max(16px, env(safe-area-inset-top))
+                         max(16px, env(safe-area-inset-right))
+                         max(16px, env(safe-area-inset-bottom))
+                         max(16px, env(safe-area-inset-left));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 DTP 請求計算</h1>
+            <p class="subtitle">ページ単価別計算ツール</p>
+        </header>
+
+        <div id="installPrompt" class="install-prompt" style="display: none;">
+            🔔 ホーム画面に追加すると、アプリのようにすぐに起動できます
+        </div>
+
+        <div class="input-section" data-icon="📄">
+            <h2>項目別入力</h2>
+
+            <div id="lineItems"></div>
+        </div>
+
+        <div class="result-section">
+            <div id="subtotalBreakdown" style="margin-bottom: 20px; border-bottom: 2px solid rgba(255, 255, 255, 0.4); padding-bottom: 16px;"></div>
+
+            <div class="results-grid">
+                <div class="result-box">
+                    <span class="result-label">合計金額</span>
+                    <span class="result-value" id="subtotal">¥0</span>
+                </div>
+                <div class="result-box highlight">
+                    <span class="result-label">💰 実際の入金額</span>
+                    <span class="result-value" id="actualPayment">¥0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-text">
+            💡 ご注意：実際の入金額は合計金額から源泉徴収税（10.21%）が引かれた額です
+        </div>
+
+        <div class="button-group">
+            <button class="btn-reset" onclick="resetForm()">リセット</button>
+            <button class="btn-copy" onclick="copyResult()">結果をコピー</button>
+        </div>
+    </div>
+
+    <script>
+        const WITHHOLDING_RATE = 0.1021;
+        const NUM_LINES = 3;
+
+        // Initialize line items on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeLineItems();
+            setupServiceWorker();
+            setupInstallPrompt();
+        });
+
+        function initializeLineItems() {
+            const container = document.getElementById('lineItems');
+            container.innerHTML = '';
+
+            for (let i = 0; i < NUM_LINES; i++) {
+                const lineItem = document.createElement('div');
+                lineItem.className = 'line-item';
+                lineItem.innerHTML = `
+                    <div class="line-number">項目 ${i + 1}</div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="unitPrice${i}">ページ単価（円）</label>
+                            <input
+                                type="number"
+                                id="unitPrice${i}"
+                                placeholder="例：5000"
+                                inputmode="decimal"
+                                step="100"
+                            >
+                        </div>
+                        <div class="input-group">
+                            <label for="pageCount${i}">ページ数</label>
+                            <input
+                                type="number"
+                                id="pageCount${i}"
+                                placeholder="例：20"
+                                inputmode="numeric"
+                                min="0"
+                            >
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="excludePages${i}">除外ページ数</label>
+                            <input
+                                type="number"
+                                id="excludePages${i}"
+                                placeholder="例：2"
+                                inputmode="numeric"
+                                min="0"
+                                value="0"
+                            >
+                        </div>
+                        <div class="input-group">
+                            <label>小計</label>
+                            <div class="subtotal" id="subtotalLine${i}">¥0</div>
+                        </div>
+                    </div>
+                `;
+
+                // Add event listeners
+                ['unitPrice', 'pageCount', 'excludePages'].forEach(fieldType => {
+                    const input = lineItem.querySelector(`#${fieldType}${i}`);
+                    input.addEventListener('input', calculateResults);
+                });
+
+                container.appendChild(lineItem);
+            }
+        }
+
+        function calculateResults() {
+            let total = 0;
+            const breakdown = [];
+
+            // Calculate each line item
+            for (let i = 0; i < NUM_LINES; i++) {
+                const unitPrice = parseFloat(document.getElementById(`unitPrice${i}`).value) || 0;
+                const pageCount = parseFloat(document.getElementById(`pageCount${i}`).value) || 0;
+                const excludePages = parseFloat(document.getElementById(`excludePages${i}`).value) || 0;
+
+                const actualPages = Math.max(0, pageCount - excludePages);
+                const lineTotal = unitPrice * actualPages;
+
+                // Update line subtotal display
+                document.getElementById(`subtotalLine${i}`).textContent =
+                    `¥${lineTotal.toLocaleString('ja-JP', {maximumFractionDigits: 0})}`;
+
+                if (lineTotal > 0) {
+                    breakdown.push(`項目${i + 1}: ¥${lineTotal.toLocaleString('ja-JP', {maximumFractionDigits: 0})}`);
+                }
+
+                total += lineTotal;
+            }
+
+            // Calculate withholding and actual payment
+            const withholding = total * WITHHOLDING_RATE;
+            const actualPayment = total - withholding;
+
+            // Update breakdown display
+            const breakdownDiv = document.getElementById('subtotalBreakdown');
+            if (breakdown.length > 0) {
+                breakdownDiv.innerHTML = breakdown.map(item =>
+                    `<div class="subtotal-item"><span class="subtotal-label">${item.split(':')[0]}</span><span class="subtotal-value">${item.split(':')[1]}</span></div>`
+                ).join('');
+            } else {
+                breakdownDiv.innerHTML = '';
+            }
+
+            // Update results display
+            document.getElementById('subtotal').textContent =
+                `¥${total.toLocaleString('ja-JP', {maximumFractionDigits: 0})}`;
+            document.getElementById('actualPayment').textContent =
+                `¥${actualPayment.toLocaleString('ja-JP', {maximumFractionDigits: 0})}`;
+
+            // Save to localStorage
+            saveFormData();
+        }
+
+        function resetForm() {
+            if (confirm('入力内容をリセットしますか？')) {
+                for (let i = 0; i < NUM_LINES; i++) {
+                    document.getElementById(`unitPrice${i}`).value = '';
+                    document.getElementById(`pageCount${i}`).value = '';
+                    document.getElementById(`excludePages${i}`).value = '0';
+                }
+                calculateResults();
+            }
+        }
+
+        function copyResult() {
+            const subtotal = document.getElementById('subtotal').textContent;
+            const actualPayment = document.getElementById('actualPayment').textContent;
+
+            const text = `DTP請求計算結果\n\n合計金額：${subtotal}\n実際の入金額：${actualPayment}\n\n※実際の入金額は源泉徴収税（10.21%）を差し引いた金額です`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'DTP請求計算結果',
+                    text: text
+                }).catch(err => console.log('Share cancelled'));
+            } else {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('結果をコピーしました！');
+                }).catch(() => {
+                    alert('コピーに失敗しました');
+                });
+            }
+        }
+
+        function saveFormData() {
+            const data = {};
+            for (let i = 0; i < NUM_LINES; i++) {
+                data[`line${i}`] = {
+                    unitPrice: document.getElementById(`unitPrice${i}`).value,
+                    pageCount: document.getElementById(`pageCount${i}`).value,
+                    excludePages: document.getElementById(`excludePages${i}`).value
+                };
+            }
+            localStorage.setItem('dtp-form-data', JSON.stringify(data));
+        }
+
+        function loadFormData() {
+            const saved = localStorage.getItem('dtp-form-data');
+            if (saved) {
+                const data = JSON.parse(saved);
+                for (let i = 0; i < NUM_LINES; i++) {
+                    if (data[`line${i}`]) {
+                        document.getElementById(`unitPrice${i}`).value = data[`line${i}`].unitPrice;
+                        document.getElementById(`pageCount${i}`).value = data[`line${i}`].pageCount;
+                        document.getElementById(`excludePages${i}`).value = data[`line${i}`].excludePages;
+                    }
+                }
+                calculateResults();
+            }
+        }
+
+        function setupServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(() => {
+                    console.log('Service Worker registration failed');
+                });
+            }
+        }
+
+        let deferredPrompt;
+
+        function setupInstallPrompt() {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('installPrompt').style.display = 'block';
+            });
+
+            window.addEventListener('appinstalled', () => {
+                deferredPrompt = null;
+                document.getElementById('installPrompt').style.display = 'none';
+            });
+        }
+
+        // Load saved data on page load
+        window.addEventListener('load', loadFormData);
+    </script>
+</body>
+</html>
