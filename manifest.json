@@ -2,7 +2,7 @@
   "name": "DTP 請求計算アプリ",
   "short_name": "DTP計算",
   "description": "DTPオペレーター向けの請求計算ツール - ページ単価別に計算し、源泉徴収も自動計算",
-  "start_url": "/",
+  "start_url": "/dtp-calculator/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
