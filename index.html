@@ -460,7 +460,7 @@
             }
 
             // Calculate withholding and actual payment
-            const withholding = total * WITHHOLDING_RATE;
+            const withholding = Math.floor(total * WITHHOLDING_RATE);
             const actualPayment = total - withholding;
 
             // Update results display
